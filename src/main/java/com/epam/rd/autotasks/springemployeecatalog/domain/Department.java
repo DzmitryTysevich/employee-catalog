@@ -9,21 +9,40 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.io.IOException;
 import java.io.StringWriter;
 
+@Entity
 public class Department {
+    @Id
+    private Long id;
 
-    private final Long id;
-    private final String name;
-    private final String location;
+    private String name;
+    private String location;
+
+    public Department() {
+    }
 
     @JsonCreator
     public Department(@JsonProperty("id") final Long id,
-                    @JsonProperty("fullName") final String name,
-                    @JsonProperty("position") final String location) {
+                      @JsonProperty("fullName") final String name,
+                      @JsonProperty("position") final String location) {
         this.id = id;
         this.name = name;
+        this.location = location;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setLocation(String location) {
         this.location = location;
     }
 
@@ -66,6 +85,7 @@ public class Department {
 
     public static class Parser {
         private static ObjectMapper mapper = new ObjectMapper();
+
         static {
             mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
             mapper.registerModule(new JavaTimeModule());
@@ -73,7 +93,7 @@ public class Department {
             mapper.configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, false);
         }
 
-        public static String toJson(Department department){
+        public static String toJson(Department department) {
             try {
                 final StringWriter writer = new StringWriter();
                 mapper.writeValue(writer, department);
@@ -83,7 +103,7 @@ public class Department {
             }
         }
 
-        public static Department parseJson(String json){
+        public static Department parseJson(String json) {
             try {
                 return mapper.readValue(json, Department.class);
             } catch (IOException exc) {
