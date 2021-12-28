@@ -9,44 +9,20 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 
-@Entity
 public class Employee {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-
-    @Embedded
-    private FullName fullName;
-
-    @Enumerated(value = EnumType.STRING)
-    private Position position;
-
-    private LocalDate hired;
-    private BigDecimal salary;
-
-    @ManyToOne(optional=false, cascade=CascadeType.ALL)
-    private Employee manager;
-
-    @ManyToOne(optional=false, cascade=CascadeType.ALL)
-    private Department department;
-
-    public Employee() {
-    }
+    private final Long id;
+    private final FullName fullName;
+    private final Position position;
+    private final LocalDate hired;
+    private final BigDecimal salary;
+    private final Employee manager;
+    private final Department department;
 
     @JsonCreator
     public Employee(@JsonProperty("id") final Long id,
@@ -62,34 +38,6 @@ public class Employee {
         this.hired = hired;
         this.salary = salary.setScale(5, RoundingMode.HALF_UP);
         this.manager = manager;
-        this.department = department;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setFullName(FullName fullName) {
-        this.fullName = fullName;
-    }
-
-    public void setPosition(Position position) {
-        this.position = position;
-    }
-
-    public void setHired(LocalDate hired) {
-        this.hired = hired;
-    }
-
-    public void setSalary(BigDecimal salary) {
-        this.salary = salary;
-    }
-
-    public void setManager(Employee manager) {
-        this.manager = manager;
-    }
-
-    public void setDepartment(Department department) {
         this.department = department;
     }
 
