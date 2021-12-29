@@ -1,47 +1,48 @@
 package com.epam.rd.autotasks.springemployeecatalog.repository;
 
 import com.epam.rd.autotasks.springemployeecatalog.domain.Employee;
-import com.epam.rd.autotasks.springemployeecatalog.rowmapper.EmployeeRowMapper;
+import com.epam.rd.autotasks.springemployeecatalog.page.JsonPage;
+import com.epam.rd.autotasks.springemployeecatalog.rowmapper.EmployeeResultSetExtractor;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Objects;
+
+import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.*;
 
 @Repository
 public class EmployeeRepositoryImpl implements EmployeeRepository {
     private final JdbcTemplate jdbcTemplate;
+    private final EmployeeResultSetExtractor employeeResultSetExtractor;
 
     @Autowired
-    public EmployeeRepositoryImpl(JdbcTemplate jdbcTemplate) {
+    public EmployeeRepositoryImpl(JdbcTemplate jdbcTemplate, EmployeeResultSetExtractor employeeResultSetExtractor) {
         this.jdbcTemplate = jdbcTemplate;
+        this.employeeResultSetExtractor = employeeResultSetExtractor;
     }
 
     @Override
     public Page<Employee> findAll(Pageable pageable) {
-        int count = countRows();
         Order order = getOrder(pageable);
-
-        String query = "SELECT * FROM employee e "
-                + "LEFT JOIN department d ON e.department = d.id "
-                + "ORDER BY " + order.getProperty() + " " + order.getDirection().name()
+        String query = SELECT_ALL_FROM_EMPLOYEE
+                + " ORDER BY " + order.getProperty() + SPACE + order.getDirection().name()
                 + " LIMIT " + pageable.getPageSize()
                 + " OFFSET " + pageable.getOffset();
-        List<Employee> employees = jdbcTemplate.query(query, new EmployeeRowMapper());
-        return new PageImpl<>(employees, pageable, count);
+        List<Employee> employees = jdbcTemplate.query(query, employeeResultSetExtractor);
+        return new JsonPage<>(Objects.requireNonNull(employees), pageable, countRows());
     }
 
     private Order getOrder(Pageable pageable) {
-        return !pageable.getSort().isEmpty() ? pageable.getSort().toList().get(0) : Order.by("id");
+        return !pageable.getSort().isEmpty() ? pageable.getSort().toList().get(0) : Order.by(ID);
     }
 
     private int countRows() {
-        String rowCountSql = "select count(*) from employee";
-        return jdbcTemplate.queryForObject(rowCountSql, Integer.class);
+        return jdbcTemplate.queryForObject(COUNT_EMPLOYEE, Integer.class);
     }
 }
