@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.DEPARTMENT;
 import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.FIRST_NAME;
 import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.HIRE_DATE;
 import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.ID;
@@ -22,7 +21,7 @@ import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.SAL
 
 @Service
 public class ExtractorService {
-    public Employee getEmployee(ResultSet resultSet, Employee manager) throws SQLException {
+    public Employee getEmployee(ResultSet resultSet, Employee manager, Department department) throws SQLException {
         return new Employee(
                 resultSet.getLong(ID),
                 getFullName(resultSet),
@@ -30,7 +29,15 @@ public class ExtractorService {
                 resultSet.getDate(HIRE_DATE).toLocalDate(),
                 resultSet.getBigDecimal(SALARY),
                 manager,
-                getDepartment(resultSet)
+                department
+        );
+    }
+
+    public Department getDepartment(ResultSet resultSet) throws SQLException {
+        return new Department(
+                resultSet.getLong(ID),
+                resultSet.getString(NAME),
+                resultSet.getString(LOCATION)
         );
     }
 
@@ -39,14 +46,6 @@ public class ExtractorService {
                 resultSet.getString(FIRST_NAME),
                 resultSet.getString(LAST_NAME),
                 resultSet.getString(MIDDLE_NAME)
-        );
-    }
-
-    private Department getDepartment(ResultSet resultSet) throws SQLException {
-        return new Department(
-                resultSet.getLong(DEPARTMENT),
-                resultSet.getString(NAME),
-                resultSet.getString(LOCATION)
         );
     }
 }

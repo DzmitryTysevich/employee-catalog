@@ -1,5 +1,6 @@
 package com.epam.rd.autotasks.springemployeecatalog.rowmapper;
 
+import com.epam.rd.autotasks.springemployeecatalog.domain.Department;
 import com.epam.rd.autotasks.springemployeecatalog.domain.Employee;
 import com.epam.rd.autotasks.springemployeecatalog.service.ExtractorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,18 +15,24 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.ALL_FROM_DEPARTMENT;
+import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.ALL_FROM_EMPLOYEE;
+import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.DEPARTMENT;
 import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.MANAGER;
-import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.SELECT_ALL_FROM_EMPLOYEE;
 
 @Component
 public class EmployeeResultSetExtractor implements ResultSetExtractor<List<Employee>> {
     private final JdbcTemplate jdbcTemplate;
     private final ManagerResultSetExtractor managerResultSetExtractor;
+    private final DepartmentResultSetExtractor departmentResultSetExtractor;
 
     @Autowired
-    public EmployeeResultSetExtractor(JdbcTemplate jdbcTemplate, ManagerResultSetExtractor managerResultSetExtractor) {
+    public EmployeeResultSetExtractor(JdbcTemplate jdbcTemplate,
+                                      ManagerResultSetExtractor managerResultSetExtractor,
+                                      DepartmentResultSetExtractor departmentResultSetExtractor) {
         this.jdbcTemplate = jdbcTemplate;
         this.managerResultSetExtractor = managerResultSetExtractor;
+        this.departmentResultSetExtractor = departmentResultSetExtractor;
     }
 
     @Override
@@ -33,12 +40,18 @@ public class EmployeeResultSetExtractor implements ResultSetExtractor<List<Emplo
         ExtractorService extractorService = new ExtractorService();
         List<Employee> employees = new LinkedList<>();
         while (resultSet.next()) {
-            employees.add(extractorService.getEmployee(resultSet, getManagers().get(resultSet.getLong(MANAGER))));
+            Employee manager = getManagers().get(resultSet.getLong(MANAGER));
+            Department department = getDepartments().get(resultSet.getInt(DEPARTMENT));
+            employees.add(extractorService.getEmployee(resultSet, manager, department));
         }
         return employees;
     }
 
     private Map<Long, Employee> getManagers() {
-        return jdbcTemplate.query(SELECT_ALL_FROM_EMPLOYEE, managerResultSetExtractor);
+        return jdbcTemplate.query(ALL_FROM_EMPLOYEE, managerResultSetExtractor);
+    }
+
+    private Map<Integer, Department> getDepartments() {
+        return jdbcTemplate.query(ALL_FROM_DEPARTMENT, departmentResultSetExtractor);
     }
 }

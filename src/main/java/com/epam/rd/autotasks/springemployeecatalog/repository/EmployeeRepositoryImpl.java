@@ -30,10 +30,9 @@ public class EmployeeRepositoryImpl implements EmployeeRepository {
     @Override
     public Page<Employee> findAll(Pageable pageable) {
         Order order = getOrder(pageable);
-        String query = SELECT_ALL_FROM_EMPLOYEE
-                + " ORDER BY " + order.getProperty() + SPACE + order.getDirection().name()
-                + " LIMIT " + pageable.getPageSize()
-                + " OFFSET " + pageable.getOffset();
+        String query = String.format(PAGEABLE_FORMAT_QUERY,
+                order.getProperty(), order.getDirection().name(), pageable.getPageSize(), pageable.getOffset()
+        );
         List<Employee> employees = jdbcTemplate.query(query, employeeResultSetExtractor);
         return new JsonPage<>(Objects.requireNonNull(employees), pageable, countRows());
     }
@@ -43,6 +42,6 @@ public class EmployeeRepositoryImpl implements EmployeeRepository {
     }
 
     private int countRows() {
-        return jdbcTemplate.queryForObject(COUNT_EMPLOYEE, Integer.class);
+        return Objects.requireNonNull(jdbcTemplate.queryForObject(COUNT_EMPLOYEE, Integer.class));
     }
 }
