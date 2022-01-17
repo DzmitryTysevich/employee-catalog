@@ -1,12 +1,6 @@
 package com.epam.rd.autotasks.springemployeecatalog.constants;
 
 public class Constant {
-    public static final String ALL_FROM_EMPLOYEE = "SELECT * FROM employee";
-    public static final String PAGEABLE_FORMAT_QUERY =
-            "SELECT id, firstName, lastName, middleName, position, manager, hireDate AS hired, salary, department " +
-                    "FROM employee ORDER BY %s %s LIMIT %d OFFSET %d";
-    public static final String ALL_FROM_DEPARTMENT = "SELECT * FROM department";
-    public static final String COUNT_EMPLOYEE = "select count(*) from employee";
     public static final String ID = "id";
     public static final String MANAGER = "manager";
     public static final String POSITION = "position";
@@ -18,4 +12,5 @@ public class Constant {
     public static final String DEPARTMENT = "department";
     public static final String NAME = "name";
     public static final String LOCATION = "location";
+    public static final String REGEX_NUMBER = "\\p{N}*";
 }
