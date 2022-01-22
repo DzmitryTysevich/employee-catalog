@@ -29,7 +29,7 @@ import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.SAL
 import static java.sql.Types.NULL;
 
 @Component
-public class EmployeeResultSetExtractor implements ResultSetExtractor<List<Employee>> {
+public class EmployeeResultSetExtractorManagersManager implements ResultSetExtractor<List<Employee>> {
 
     @Override
     public List<Employee> extractData(ResultSet resultSet) throws SQLException, DataAccessException {
@@ -67,7 +67,7 @@ public class EmployeeResultSetExtractor implements ResultSetExtractor<List<Emplo
         Employee manager = null;
         while (resultSet.next()) {
             if (resultSet.getLong(ID) == managerId) {
-                manager = getEmployee(resultSet, null);
+                manager = getEmployee(resultSet, getManager(resultSet));
                 break;
             }
         }

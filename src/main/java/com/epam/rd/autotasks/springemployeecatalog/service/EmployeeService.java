@@ -5,9 +5,12 @@ import com.epam.rd.autotasks.springemployeecatalog.domain.Employee;
 import com.epam.rd.autotasks.springemployeecatalog.repository.EmployeeRepository;
 import com.epam.rd.autotasks.springemployeecatalog.repository.EmployeeRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class EmployeeService {
@@ -18,19 +21,23 @@ public class EmployeeService {
         this.employeeRepository = employeeDaoImpl;
     }
 
-    public Page<Employee> getEmployees(Pageable pageable) {
+    public List<Employee> getEmployees(Pageable pageable) throws SQLException {
         return employeeRepository.findAllEmployee(pageable);
     }
 
-    public Employee getEmployeeById(String id, boolean full_chain) {
-        return employeeRepository.findById(Long.parseLong(id), full_chain);
+    public Optional<Employee> getEmployeeById(String id, boolean fullChain) {
+        if (fullChain) {
+            return employeeRepository.findByIdWithManagersManager(Long.parseLong(id));
+        } else {
+            return employeeRepository.findByIdWIthManager(Long.parseLong(id));
+        }
     }
 
-    public Page<Employee> getEmployeesByManager(String id, Pageable pageable) {
-        return employeeRepository.findEmployeesByManager(Long.parseLong(id), pageable);
+    public List<Employee> getEmployeesByManager(String managerId, Pageable pageable) {
+        return employeeRepository.findEmployeesByManager(Long.parseLong(managerId), pageable);
     }
 
-    public Page<Employee> getEmployeesByDepIdOrDepName(String value, Pageable pageable) {
+    public List<Employee> getEmployeesByDepIdOrDepName(String value, Pageable pageable) {
         if (value.matches(Constant.REGEX_NUMBER)) {
             return employeeRepository.findEmployeesByDepId(Long.parseLong(value), pageable);
         } else {

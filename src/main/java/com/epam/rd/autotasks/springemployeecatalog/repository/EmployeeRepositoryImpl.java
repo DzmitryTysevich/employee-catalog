@@ -1,88 +1,127 @@
 package com.epam.rd.autotasks.springemployeecatalog.repository;
 
 import com.epam.rd.autotasks.springemployeecatalog.domain.Employee;
-import com.epam.rd.autotasks.springemployeecatalog.page.JsonPage;
+import com.epam.rd.autotasks.springemployeecatalog.extractor.EmployeeResultSetExtractorManagersManager;
 import com.epam.rd.autotasks.springemployeecatalog.extractor.EmployeeResultSetExtractor;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.stereotype.Repository;
 
+import java.sql.ResultSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.ID;
-import static com.epam.rd.autotasks.springemployeecatalog.constants.SQLQuery.ALL_EMPLOYEE_FORMAT_QUERY;
-import static com.epam.rd.autotasks.springemployeecatalog.constants.SQLQuery.COUNT_EMPLOYEE;
-import static com.epam.rd.autotasks.springemployeecatalog.constants.SQLQuery.EMPLOYEE_BY_DEPARTMENT_FORMAT_QUERY;
-import static com.epam.rd.autotasks.springemployeecatalog.constants.SQLQuery.EMPLOYEE_BY_DEPARTMENT_NAME_FORMAT_QUERY;
-import static com.epam.rd.autotasks.springemployeecatalog.constants.SQLQuery.EMPLOYEE_BY_ID_FORMAT_QUERY;
-import static com.epam.rd.autotasks.springemployeecatalog.constants.SQLQuery.EMPLOYEE_BY_MANAGER_FORMAT_QUERY;
+import static com.epam.rd.autotasks.springemployeecatalog.constants.SQLQuery.ALL_FROM_EMPLOYEE;
+import static com.epam.rd.autotasks.springemployeecatalog.constants.SQLQuery.ALL_FROM_EMPLOYEE_FORMAT_QUERY;
 
 @Repository
 public class EmployeeRepositoryImpl implements EmployeeRepository {
     private final JdbcTemplate jdbcTemplate;
-    private final EmployeeResultSetExtractor employeeResultSetExtractor;
 
     @Autowired
-    public EmployeeRepositoryImpl(JdbcTemplate jdbcTemplate, EmployeeResultSetExtractor employeeResultSetExtractor) {
+    public EmployeeRepositoryImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.employeeResultSetExtractor = employeeResultSetExtractor;
     }
 
     @Override
-    public Page<Employee> findAllEmployee(Pageable pageable) {
-        Order order = getOrder(pageable);
-        String pageableQuery = String.format(
-                ALL_EMPLOYEE_FORMAT_QUERY, order.getProperty(), order.getDirection().name(), pageable.getPageSize(), pageable.getOffset()
+    public List<Employee> findAllEmployee(Pageable pageable) {
+        String employeeFormatQuery = getEmployeeFormatQuery(pageable);
+        return getPageableEmployees(pageable, getEmployees(employeeFormatQuery));
+    }
+
+    @Override
+    public Optional<Employee> findByIdWIthManager(Long id) {
+        List<Employee> employees = jdbcTemplate.query(
+                getPreparedStatementCreator(ALL_FROM_EMPLOYEE), new EmployeeResultSetExtractor()
         );
-        return new JsonPage<>(Objects.requireNonNull(getEmployeesList(pageableQuery)), pageable, countRows());
+        return getEmployeeFilteredById(employees, id);
     }
 
     @Override
-    public Employee findById(Long id, boolean full_chain) {
-        String queryByIdFormat = String.format(EMPLOYEE_BY_ID_FORMAT_QUERY, id);
-        if (full_chain) {
-            return null;
-        } else return Objects.requireNonNull(jdbcTemplate.query(queryByIdFormat, employeeResultSetExtractor)).get(0);
+    public Optional<Employee> findByIdWithManagersManager(Long id) {
+        List<Employee> employees = jdbcTemplate.query(
+                getPreparedStatementCreator(ALL_FROM_EMPLOYEE), new EmployeeResultSetExtractorManagersManager()
+        );
+        return getEmployeeFilteredById(employees, id);
     }
 
     @Override
-    public Page<Employee> findEmployeesByManager(Long id, Pageable pageable) {
+    public List<Employee> findEmployeesByManager(Long managerId, Pageable pageable) {
+        String employeeFormatQuery = getEmployeeFormatQuery(pageable);
+        List<Employee> employees = getEmployees(employeeFormatQuery);
+        return getPageableEmployees(pageable, getEmployeesFilteredByManager(employees, managerId));
+    }
+
+    @Override
+    public List<Employee> findEmployeesByDepId(Long id, Pageable pageable) {
+        String employeeFormatQuery = getEmployeeFormatQuery(pageable);
+        List<Employee> employees = getEmployees(employeeFormatQuery);
+        return getPageableEmployees(pageable, getEmployeesFilteredByDepId(employees, id));
+    }
+
+    @Override
+    public List<Employee> findEmployeesByDepName(String depName, Pageable pageable) {
+        String employeeFormatQuery = getEmployeeFormatQuery(pageable);
+        List<Employee> employees = getEmployees(employeeFormatQuery);
+        return getPageableEmployees(pageable, getEmployeesFilteredByDepName(employees, depName));
+    }
+
+    private Optional<Employee> getEmployeeFilteredById(List<Employee> employees, Long id) {
+        return Optional.ofNullable(Objects.requireNonNull(employees).stream()
+                .filter(employee -> Objects.equals(employee.getId(), id))
+                .collect(Collectors.toList()).get(0));
+    }
+
+    private List<Employee> getEmployeesFilteredByManager(List<Employee> employees, Long managerId) {
+        return employees.stream()
+                .filter(employee -> employee.getManager() != null && Objects.equals(employee.getManager().getId(), managerId))
+                .collect(Collectors.toList());
+    }
+
+    private List<Employee> getEmployeesFilteredByDepId(List<Employee> employees, Long depId) {
+        return employees.stream()
+                .filter(employee -> employee.getDepartment() != null && Objects.equals(employee.getDepartment().getId(), depId))
+                .collect(Collectors.toList());
+    }
+
+    private List<Employee> getEmployeesFilteredByDepName(List<Employee> employees, String depName) {
+        return employees.stream()
+                .filter(employee -> employee.getDepartment() != null && Objects.equals(employee.getDepartment().getName(), depName))
+                .collect(Collectors.toList());
+    }
+
+    private List<Employee> getEmployees(String pageableQuery) {
+        return jdbcTemplate.query(getPreparedStatementCreator(pageableQuery), new EmployeeResultSetExtractor());
+    }
+
+    private List<Employee> getPageableEmployees(Pageable pageable, List<Employee> employees) {
+        int fromIndex = pageable.getPageNumber() * pageable.getPageSize();
+        int toIndex = Math.min(fromIndex + pageable.getPageSize(), Objects.requireNonNull(employees).size());
+        if (fromIndex > toIndex) {
+            return Collections.emptyList();
+        } else {
+            return Objects.requireNonNull(employees).subList(fromIndex, toIndex);
+        }
+    }
+
+    private String getEmployeeFormatQuery(Pageable pageable) {
         Order order = getOrder(pageable);
-        String pageableQuery = String.format(EMPLOYEE_BY_MANAGER_FORMAT_QUERY,
-                id, order.getProperty(), order.getDirection().name(), pageable.getPageSize(), pageable.getOffset());
-        return new JsonPage<>(Objects.requireNonNull(getEmployeesList(pageableQuery)), pageable, countRows());
+        return String.format(ALL_FROM_EMPLOYEE_FORMAT_QUERY, order.getProperty(), order.getDirection().name());
     }
 
-    @Override
-    public Page<Employee> findEmployeesByDepId(Long id, Pageable pageable) {
-        Order order = getOrder(pageable);
-        String pageableQuery = String.format(EMPLOYEE_BY_DEPARTMENT_FORMAT_QUERY,
-                id, order.getProperty(), order.getDirection().name(), pageable.getPageSize(), pageable.getOffset());
-        return new JsonPage<>(Objects.requireNonNull(getEmployeesList(pageableQuery)), pageable, countRows());
-    }
-
-    @Override
-    public Page<Employee> findEmployeesByDepName(String depName, Pageable pageable) {
-        Order order = getOrder(pageable);
-        String pageableQuery = String.format(EMPLOYEE_BY_DEPARTMENT_NAME_FORMAT_QUERY,
-                depName, order.getProperty(), order.getDirection().name(), pageable.getPageSize(), pageable.getOffset());
-        return new JsonPage<>(Objects.requireNonNull(getEmployeesList(pageableQuery)), pageable, countRows());
-    }
-
-    private List<Employee> getEmployeesList(String pageableQuery) {
-        return jdbcTemplate.query(pageableQuery, employeeResultSetExtractor);
+    private PreparedStatementCreator getPreparedStatementCreator(String pageableQuery) {
+        return connection -> connection.prepareStatement(pageableQuery, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
     }
 
     private Order getOrder(Pageable pageable) {
         return !pageable.getSort().isEmpty() ? pageable.getSort().toList().get(0) : Order.by(ID);
-    }
-
-    private int countRows() {
-        return Objects.requireNonNull(jdbcTemplate.queryForObject(COUNT_EMPLOYEE, Integer.class));
     }
 }

@@ -1,17 +1,22 @@
 package com.epam.rd.autotasks.springemployeecatalog.repository;
 
 import com.epam.rd.autotasks.springemployeecatalog.domain.Employee;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
+
 public interface EmployeeRepository {
-    Page<Employee> findAllEmployee(Pageable pageable);
+    List<Employee> findAllEmployee(Pageable pageable) throws SQLException;
 
-    Employee findById(Long id, boolean full_chain);
+    Optional<Employee> findByIdWIthManager(Long id);
 
-    Page<Employee> findEmployeesByManager(Long id, Pageable pageable);
+    Optional<Employee> findByIdWithManagersManager(Long id);
 
-    Page<Employee> findEmployeesByDepId(Long id, Pageable pageable);
+    List<Employee> findEmployeesByManager(Long managerId, Pageable pageable);
 
-    Page<Employee> findEmployeesByDepName(String value, Pageable pageable);
+    List<Employee> findEmployeesByDepId(Long id, Pageable pageable);
+
+    List<Employee> findEmployeesByDepName(String value, Pageable pageable);
 }
