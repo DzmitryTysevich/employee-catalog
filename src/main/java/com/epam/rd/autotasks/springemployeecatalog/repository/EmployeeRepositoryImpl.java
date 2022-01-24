@@ -98,18 +98,26 @@ public class EmployeeRepositoryImpl implements EmployeeRepository {
                 .collect(Collectors.toList());
     }
 
-    private List<Employee> getEmployees(String pageableQuery) {
-        return jdbcTemplate.query(getPreparedStatementCreator(pageableQuery), new EmployeeResultSetExtractor());
+    private List<Employee> getEmployees(String query) {
+        return jdbcTemplate.query(getPreparedStatementCreator(query), new EmployeeResultSetExtractor());
     }
 
     private List<Employee> getPageableEmployees(Pageable pageable, List<Employee> employees) {
-        int fromIndex = pageable.getPageNumber() * pageable.getPageSize();
-        int toIndex = Math.min(fromIndex + pageable.getPageSize(), Objects.requireNonNull(employees).size());
+        int fromIndex = getFromIndex(pageable);
+        int toIndex = getToIndex(pageable, employees, fromIndex);
         if (fromIndex > toIndex) {
             return Collections.emptyList();
         } else {
             return Objects.requireNonNull(employees).subList(fromIndex, toIndex);
         }
+    }
+
+    private int getToIndex(Pageable pageable, List<Employee> employees, int fromIndex) {
+        return Math.min(fromIndex + pageable.getPageSize(), Objects.requireNonNull(employees).size());
+    }
+
+    private int getFromIndex(Pageable pageable) {
+        return pageable.getPageNumber() * pageable.getPageSize();
     }
 
     private String getEmployeeFormatQuery(Pageable pageable) {
