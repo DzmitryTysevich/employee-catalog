@@ -9,8 +9,6 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
 
 import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.DEPARTMENT;
 import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.FIRST_NAME;
@@ -34,7 +32,7 @@ public class ExtractorUtils {
         LocalDate hired = resultSet.getDate(HIRE_DATE).toLocalDate();
         BigDecimal salary = resultSet.getBigDecimal(SALARY);
         Employee mgr = resultSet.getLong(MANAGER) == NULL ? null : manager;
-        Department department = resultSet.getLong(DEPARTMENT) == NULL ? null : getDepartments(resultSet).get(resultSet.getLong(DEPARTMENT));
+        Department department = resultSet.getLong(DEPARTMENT) == NULL ? null : getDepartment(resultSet);
         return new Employee(id, fullName, position, hired, salary, mgr, department);
     }
 
@@ -75,17 +73,10 @@ public class ExtractorUtils {
         return new FullName(firstName, lastName, middleName);
     }
 
-    public static Map<Long, Department> getDepartments(ResultSet resultSet) throws SQLException {
-        int currentRow = resultSet.getRow();
-        resultSet.beforeFirst();
-        Map<Long, Department> departments = new HashMap<>();
-        while (resultSet.next()) {
-            Long depId = resultSet.getLong(DEPARTMENT);
-            String name = resultSet.getString(NAME);
-            String location = resultSet.getString(LOCATION);
-            departments.put(depId, new Department(depId, name, location));
-        }
-        resultSet.absolute(currentRow);
-        return departments;
+    public static Department getDepartment(ResultSet resultSet) throws SQLException {
+        Long depId = resultSet.getLong(DEPARTMENT);
+        String name = resultSet.getString(NAME);
+        String location = resultSet.getString(LOCATION);
+        return new Department(depId, name, location);
     }
 }
