@@ -1,9 +1,10 @@
-package com.epam.rd.autotasks.springemployeecatalog.utils;
+package com.epam.rd.autotasks.springemployeecatalog.mappers;
 
 import com.epam.rd.autotasks.springemployeecatalog.domain.Department;
 import com.epam.rd.autotasks.springemployeecatalog.domain.Employee;
 import com.epam.rd.autotasks.springemployeecatalog.domain.FullName;
 import com.epam.rd.autotasks.springemployeecatalog.domain.Position;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -23,9 +24,10 @@ import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.POS
 import static com.epam.rd.autotasks.springemployeecatalog.constants.Constant.SALARY;
 import static java.sql.Types.NULL;
 
-public class ExtractorUtils {
+@Component
+public class MapperComponent {
 
-    public static Employee getEmployee(ResultSet resultSet, Employee manager) throws SQLException {
+    public Employee getEmployee(ResultSet resultSet, Employee manager) throws SQLException {
         Long id = resultSet.getLong(ID);
         FullName fullName = getFullName(resultSet);
         Position position = Position.valueOf(resultSet.getString(POSITION));
@@ -36,7 +38,7 @@ public class ExtractorUtils {
         return new Employee(id, fullName, position, hired, salary, mgr, department);
     }
 
-    public static Employee getManager(ResultSet resultSet) throws SQLException {
+    public Employee getManager(ResultSet resultSet) throws SQLException {
         int currentRow = resultSet.getRow();
         long managerId = resultSet.getLong(MANAGER);
         resultSet.beforeFirst();
@@ -51,7 +53,7 @@ public class ExtractorUtils {
         return manager;
     }
 
-    public static Employee getManagersManager(ResultSet resultSet) throws SQLException {
+    public Employee getManagersManager(ResultSet resultSet) throws SQLException {
         int currentRow = resultSet.getRow();
         long managerId = resultSet.getLong(MANAGER);
         resultSet.beforeFirst();
@@ -66,14 +68,14 @@ public class ExtractorUtils {
         return manager;
     }
 
-    public static FullName getFullName(ResultSet resultSet) throws SQLException {
+    public FullName getFullName(ResultSet resultSet) throws SQLException {
         String firstName = resultSet.getString(FIRST_NAME);
         String lastName = resultSet.getString(LAST_NAME);
         String middleName = resultSet.getString(MIDDLE_NAME);
         return new FullName(firstName, lastName, middleName);
     }
 
-    public static Department getDepartment(ResultSet resultSet) throws SQLException {
+    public Department getDepartment(ResultSet resultSet) throws SQLException {
         Long depId = resultSet.getLong(DEPARTMENT);
         String name = resultSet.getString(NAME);
         String location = resultSet.getString(LOCATION);

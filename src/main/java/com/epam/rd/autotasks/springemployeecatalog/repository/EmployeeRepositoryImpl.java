@@ -28,10 +28,16 @@ import static com.epam.rd.autotasks.springemployeecatalog.constants.SQLQuery.EMP
 @Repository
 public class EmployeeRepositoryImpl implements EmployeeRepository {
     private final JdbcTemplate jdbcTemplate;
+    private final EmployeeResultSetExtractor employeeResultSetExtractor;
+    private final EmployeeResultSetExtractorManagersManager employeeResultSetExtractorManagersManager;
 
     @Autowired
-    public EmployeeRepositoryImpl(JdbcTemplate jdbcTemplate) {
+    public EmployeeRepositoryImpl(JdbcTemplate jdbcTemplate,
+                                  EmployeeResultSetExtractor employeeResultSetExtractor,
+                                  EmployeeResultSetExtractorManagersManager employeeResultSetExtractorManagersManager) {
         this.jdbcTemplate = jdbcTemplate;
+        this.employeeResultSetExtractor = employeeResultSetExtractor;
+        this.employeeResultSetExtractorManagersManager = employeeResultSetExtractorManagersManager;
     }
 
     @Override
@@ -51,7 +57,7 @@ public class EmployeeRepositoryImpl implements EmployeeRepository {
     @Override
     public Optional<Employee> findByIdWithManagersManager(Long id) {
         String formatQuery = String.format(EMPLOYEE_BY_ID_FORMAT_QUERY, id);
-        List<Employee> employees = jdbcTemplate.query(getPreparedStatementCreator(formatQuery), new EmployeeResultSetExtractorManagersManager());
+        List<Employee> employees = jdbcTemplate.query(getPreparedStatementCreator(formatQuery), employeeResultSetExtractorManagersManager);
         return Optional.ofNullable(Objects.requireNonNull(employees).get(0));
     }
 
@@ -98,7 +104,7 @@ public class EmployeeRepositoryImpl implements EmployeeRepository {
     }
 
     private List<Employee> getEmployeesWithManager(String formatQuery) {
-        return jdbcTemplate.query(getPreparedStatementCreator(formatQuery), new EmployeeResultSetExtractor());
+        return jdbcTemplate.query(getPreparedStatementCreator(formatQuery), employeeResultSetExtractor);
     }
 
     private List<Employee> getPageableEmployees(Pageable pageable, List<Employee> employees) {
